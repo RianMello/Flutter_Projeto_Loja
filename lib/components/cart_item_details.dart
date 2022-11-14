@@ -28,6 +28,25 @@ class CartItemDetails extends StatelessWidget {
           size: 36,
         ),
       ),
+      confirmDismiss: (_) {
+        return showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text("Delete item"),
+            content: Text(
+                "Are you sure you want to delete this item from your cart?"),
+            actions: [
+              ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text("Yes")),
+              TextButton(
+                child: Text("No!"),
+                onPressed: () => Navigator.of(context).pop(false),
+              )
+            ],
+          ),
+        );
+      },
       onDismissed: (_) {
         Provider.of<Cart>(
           context,
