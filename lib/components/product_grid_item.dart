@@ -6,8 +6,8 @@ import 'package:shopping/utils/app_routes.dart';
 
 import '../models/product.dart';
 
-class ProductItem extends StatelessWidget {
-  const ProductItem({Key? key}) : super(key: key);
+class ProductGridItem extends StatelessWidget {
+  const ProductGridItem({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,7 @@ class ProductItem extends StatelessWidget {
             ),
           ),
           trailing: Consumer<Cart>(
-            builder: (ctx, cart, _) => IconButton(
+            builder: (ctx, cart, child) => IconButton(
               icon: Icon(
                 cart.containedItem(product.id!)
                     ? Icons.shopping_cart
@@ -36,6 +36,17 @@ class ProductItem extends StatelessWidget {
               ),
               onPressed: () {
                 cart.addItem(product);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text("Product added to cart"),
+                    action: SnackBarAction(
+                      label: 'Undo',
+                      onPressed: () {
+                        cart.removeSingleItem(product.id!);
+                      },
+                    ),
+                  ),
+                );
               },
             ),
           ),
