@@ -40,6 +40,20 @@ class AppDrawer extends StatelessWidget {
               AppRoutes.orders,
             ),
           ),
+          const Divider(),
+          ListTile(
+            leading: Icon(Icons.edit),
+            title: const Text(
+              "Menage Products",
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+              ),
+            ),
+            onTap: () => Navigator.of(context).pushReplacementNamed(
+              AppRoutes.products,
+            ),
+          ),
         ],
       ),
     );

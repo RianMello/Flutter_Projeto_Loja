@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping/pages/orders_page.dart';
+import 'package:shopping/pages/products.dart';
 
 import 'utils/app_routes.dart';
 
@@ -61,6 +62,7 @@ class MyApp extends StatelessWidget {
           AppRoutes.productDetails: (context) => const ProductDetailsPage(),
           AppRoutes.cart: (context) => CartPage(),
           AppRoutes.orders: (context) => const OrdersPage(),
+          AppRoutes.products: (context) => const ProductsPage(),
         },
         debugShowCheckedModeBanner: false,
       ),
