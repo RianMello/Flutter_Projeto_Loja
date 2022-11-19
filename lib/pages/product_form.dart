@@ -23,6 +23,8 @@ class _ProductFormPageState extends State<ProductFormPage> {
 
   final _formDatas = Map<String, Object>();
 
+  bool _isLoading = false;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -70,7 +72,7 @@ class _ProductFormPageState extends State<ProductFormPage> {
     return isValideUrl && endWithFile;
   }
 
-  void submitForm() {
+  Future<void> submitForm() async {
     final isValid = _formKey.currentState?.validate() ?? false;
 
     if (!isValid) {
@@ -79,8 +81,36 @@ class _ProductFormPageState extends State<ProductFormPage> {
 
     _formKey.currentState?.save();
 
-    Provider.of<ProductsList>(context, listen: false).saveProduct(_formDatas);
-    Navigator.of(context).pop();
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await Provider.of<ProductsList>(
+        context,
+        listen: false,
+      ).saveProduct(_formDatas);
+      Navigator.of(context).pop();
+    } catch (err) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text("Ops!"),
+          content:
+              Text("It looks like there was an error adding this product."),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -89,138 +119,141 @@ class _ProductFormPageState extends State<ProductFormPage> {
       appBar: AppBar(
         title: Text(_formDatas.isEmpty ? 'New Product' : 'Edit Product'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                initialValue: _formDatas['name']?.toString(),
-                decoration: const InputDecoration(labelText: 'Name'),
-                textInputAction: TextInputAction.next,
-                onSaved: (name) => _formDatas['name'] = name ?? '',
-                validator: (nameParam) {
-                  final name = nameParam ?? '';
-                  if (name.trim().isEmpty) {
-                    return 'Name must not be empty!';
-                  }
-                  if (name.trim().length < 2) {
-                    return 'Name must be at least 3 letters!';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                initialValue: _formDatas['price']?.toString(),
-                decoration: const InputDecoration(labelText: 'Price'),
-                textInputAction: TextInputAction.next,
-                keyboardType: TextInputType.number,
-                onSaved: (price) {
-                  _formDatas['price'] = double.parse(price ?? "0.0");
-                },
-                validator: (priceParam) {
-                  final price = priceParam ?? '-1';
-
-                  if (price.trim().isEmpty) {
-                    return 'The product must have a price';
-                  }
-                  if (double.parse(price) <= 0) {
-                    return 'Price cannot be 0';
-                  }
-                },
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      decoration: const InputDecoration(labelText: 'Image'),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(15),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
+                    TextFormField(
+                      initialValue: _formDatas['name']?.toString(),
+                      decoration: const InputDecoration(labelText: 'Name'),
                       textInputAction: TextInputAction.next,
-                      focusNode: _imgUrlFocus,
-                      keyboardType: TextInputType.url,
-                      controller: _imgUrlController,
-                      onSaved: (imageUrl) {
-                        _formDatas['imageUrl'] = imageUrl ?? '';
-                      },
-                      validator: (urlParam) {
-                        final url = urlParam ?? '';
-                        if (!imageUrlIsValide(url)) {
-                          return 'This is not a valid url, please check it again!';
+                      onSaved: (name) => _formDatas['name'] = name ?? '',
+                      validator: (nameParam) {
+                        final name = nameParam ?? '';
+                        if (name.trim().isEmpty) {
+                          return 'Name must not be empty!';
+                        }
+                        if (name.trim().length < 2) {
+                          return 'Name must be at least 3 letters!';
                         }
                         return null;
                       },
                     ),
-                  ),
-                  Container(
-                    width: 100,
-                    height: 100,
-                    margin: const EdgeInsets.only(
-                      top: 10,
-                      left: 10,
+                    TextFormField(
+                      initialValue: _formDatas['price']?.toString(),
+                      decoration: const InputDecoration(labelText: 'Price'),
+                      textInputAction: TextInputAction.next,
+                      keyboardType: TextInputType.number,
+                      onSaved: (price) {
+                        _formDatas['price'] = double.parse(price ?? "0.0");
+                      },
+                      validator: (priceParam) {
+                        final price = priceParam ?? '-1';
+
+                        if (price.trim().isEmpty) {
+                          return 'The product must have a price';
+                        }
+                        if (double.parse(price) <= 0) {
+                          return 'Price cannot be 0';
+                        }
+                      },
                     ),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.grey,
-                        width: 1,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: _imgUrlController.text.isEmpty
-                        ? const Icon(
-                            Icons.image_outlined,
-                            size: 50,
-                          )
-                        : FittedBox(
-                            fit: BoxFit.cover,
-                            child: Image.network(_imgUrlController.text),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            decoration:
+                                const InputDecoration(labelText: 'Image'),
+                            textInputAction: TextInputAction.next,
+                            focusNode: _imgUrlFocus,
+                            keyboardType: TextInputType.url,
+                            controller: _imgUrlController,
+                            onSaved: (imageUrl) {
+                              _formDatas['imageUrl'] = imageUrl ?? '';
+                            },
+                            validator: (urlParam) {
+                              final url = urlParam ?? '';
+                              if (!imageUrlIsValide(url)) {
+                                return 'This is not a valid url, please check it again!';
+                              }
+                              return null;
+                            },
                           ),
-                  )
-                ],
-              ),
-              TextFormField(
-                initialValue: _formDatas['description']?.toString(),
-                decoration: const InputDecoration(labelText: 'Description'),
-                textInputAction: TextInputAction.done,
-                keyboardType: TextInputType.multiline,
-                maxLines: 3,
-                onSaved: (description) {
-                  _formDatas['description'] = description ?? '';
-                },
-                validator: (descriptionParam) {
-                  final description = descriptionParam ?? '';
-                  if (description.trim().isEmpty) {
-                    return 'Description must not be empty!';
-                  }
-                  if (description.trim().length < 2) {
-                    return 'Description must be at least 3 letters!';
-                  }
-                  return null;
-                },
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    width: 100,
-                    height: 40,
-                    margin: const EdgeInsets.all(15),
-                    child: ElevatedButton(
-                      onPressed: () => submitForm(),
-                      child: const Text(
-                        "Save",
-                        style: TextStyle(
-                          fontSize: 16,
                         ),
-                      ),
+                        Container(
+                          width: 100,
+                          height: 100,
+                          margin: const EdgeInsets.only(
+                            top: 10,
+                            left: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey,
+                              width: 1,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: _imgUrlController.text.isEmpty
+                              ? const Icon(
+                                  Icons.image_outlined,
+                                  size: 50,
+                                )
+                              : Image.network(_imgUrlController.text),
+                        )
+                      ],
                     ),
-                  )
-                ],
-              )
-            ],
-          ),
-        ),
-      ),
+                    TextFormField(
+                      initialValue: _formDatas['description']?.toString(),
+                      decoration:
+                          const InputDecoration(labelText: 'Description'),
+                      textInputAction: TextInputAction.done,
+                      keyboardType: TextInputType.multiline,
+                      maxLines: 3,
+                      onSaved: (description) {
+                        _formDatas['description'] = description ?? '';
+                      },
+                      validator: (descriptionParam) {
+                        final description = descriptionParam ?? '';
+                        if (description.trim().isEmpty) {
+                          return 'Description must not be empty!';
+                        }
+                        if (description.trim().length < 2) {
+                          return 'Description must be at least 3 letters!';
+                        }
+                        return null;
+                      },
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 40,
+                          margin: const EdgeInsets.all(15),
+                          child: ElevatedButton(
+                            onPressed: () => submitForm(),
+                            child: const Text(
+                              "Save",
+                              style: TextStyle(
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        )
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }
